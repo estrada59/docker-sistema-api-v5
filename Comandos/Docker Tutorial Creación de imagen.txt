@@ -1,0 +1,106 @@
+Construir una imagen Docker
+
+Paso 1:
+Crear un archivo docker file
+
+Paso 2:
+El proyecto en php tiene que estar dentro de una carpeta src a
+continuación se muestra la estructura:
+
+--src
+----index.php
+Dockerfile
+
+Paso 3:
+Editamos es archivo Dockerfile y cargamos nuestra configuración:
+
+Para este caso apache y php buscamos una imagen
+
+https://hub.docker.com/_/php
+
+Contenido del archivo Dockerfile:
+
+*************************************
+FROM php:8.5-rc-apache
+COPY src/ /var/www/html/
+EXPOSE 8089
+*************************************
+
+Paso 4:
+
+Dentro de la terminar del proyecto en visual studio code
+construimos la imagen con el siguiente comando:
+
+*************************************
+docker  build -t hellophp .
+*************************************
+
+Paso 5:
+Visualizamos si se creo la imagen hellophp
+
+Ejecutamos comando:
+
+*************************************
+docker images
+*************************************
+
+IMAGE                             ID             DISK USAGE   CONTENT SIZE   EXTRA
+docker/welcome-to-docker:latest   c4d56c24da4f       22.2MB         6.03MB    U 
+hellophp:latest                   09dbaffbce05        737MB          181MB
+welcome-to-docker:latest          a5b0fd5a876d        449MB          123MB    U 
+
+Paso 6:
+
+Como se ejecutó correctamente y vemos la imagen ejecutamos el contenedor
+
+*************************************
+docker run -p 3000:80  hellophp
+*************************************
+
+Con eso levantamos el servicio y accedemos al recurso
+
+Paso 7:
+
+Accedemos en el navegador
+
+*************************************
+http://localhost:3000/
+*************************************
+
+Y visualizamos el proyecto.
+
+Con Ctrl+c apagamos el contenedor pero si queremos que se quede el proceso ejecutamos
+
+*************************************
+docker run -p 3000:80 -d  hellophp
+*************************************
+
+eso nos devuelve el id del proceso ejemplo:
+c2d4ac9a510817bc9c13c81b6e478322b46c58be05f0bd3048879fd41a475eea
+
+El siguiente comando devuelve el contenedor en ejecución
+*************************************
+docker ps
+*************************************
+CONTAINER ID   IMAGE      COMMAND                  CREATED         STATUS         PORTS                                     NAMES
+c2d4ac9a5108   hellophp   "docker-php-entrypoi…"   2 minutes ago   Up 2 minutes   0.0.0.0:3000->80/tcp, [::]:3000->80/tcp   admiring_dhawan
+
+Paso 8:
+Como queremos depurar de manera dinamica nuestros archivos y ver los cambios reflejados en el servidor
+tenemos que ejecutar el siguiente comando:
+
+*************************************
+docker run -p 3000:80 -d -v ${PWD}/src:/var/www/html hellophp
+*************************************
+
+Paso 9:
+Configurado el proyecto podemos crear una imagen del estado actual Para
+poder replicarlo
+
+hellophp:1.0 -> indica que es la versión 1.0 de la aplicacion
+
+*************************************
+docker  build -t hellophp:1.0 .
+*************************************
+
+

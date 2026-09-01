@@ -1,0 +1,130 @@
+Ejecutar SSH desde windows al NAS DS723+
+
+******************************************************
+INICIO SESION
+******************************************************
+
+En CMD ejecutamos: 
+
+    ssh numedics@192.168.0.2 -p 6223
+
+    ssh numedics@nasnumedics.ddns.net -p 6223
+
+una vez dentro ejecutamos: 
+
+    sudo su
+
+nos dirigimos al proyecto: 
+
+    cd /volume1/docker/
+
+despues elegimos el proyecto: 
+
+    cd appSistema1.0
+
+Forma rápida
+
+    cd /volume1/docker/appSistema1.0/  
+
+Detro solo vamos a actualizar o alojar el archivo:
+
+    docker-compose.prod.yml
+
+******************************************************
+
+Dentro del proyecto podemos ejecutar los comandos registrados
+en los archivos:
+
+    Comandos diarios.txt
+    Docker Tutorial Creación de imagen.txt
+    Migrando Base de datos vieja.txt
+
+Permisos docker
+    sudo chown -R 999:999 /volume1/docker
+
+********************************************************
+Descargar imagen docker al NAS
+*******************************************************
+💡 Flujo correcto (PRO)
+🛠 En tu PC
+    
+    docker build -t estrada59/sistemaapi:1.0 .
+    docker push estrada59/sistemaapi:1.0
+
+🚀 En tu NAS
+Después del sudo su hacemos pull a la imagen más actual
+
+    docker pull estrada59/sistemaapi:1.0
+
+Comprobamos que ya esté la imagen:
+
+    docker images
+
+REPOSITORY                  TAG       IMAGE ID       CREATED        SIZE
+estrada59/medicinanuclear   1.0       4b26cc548579   24 hours ago   1.93GB
+
+Forma rápida
+
+    cd /volume1/docker/appSistema1.0/  
+
+Detro solo vamos a actualizar o alojar el archivo:
+
+    docker-compose.prod.yml
+
+Levantamos contenedor el cual enlazará a la imagen docker previamente descargada
+    
+    docker compose -f docker-compose.prod.yml up -d
+    
+
+    docker ps
+
+Ejecutamos y esperamos a que cree las bases de datos 
+    
+    PACIENCIA TARDA 15 min aprox
+    docker logs -f mysql-db
+
+Bajar contenedores:
+    
+    docker compose -f docker-compose.prod.yml down -v
+
+
+**************************************************************
+Borrar imagenes por ID
+**************************************************************
+Ejecutamos para visualizar imagenes;
+
+    docker images
+
+    REPOSITORY                  TAG       IMAGE ID       CREATED         SIZE
+    estrada59/medicinanuclear   1.0       ee8d39c58036   4 minutes ago   1.93GB
+    estrada59/medicinanuclear   <none>    4b26cc548579   26 hours ago    1.93GB
+    sistema-web                 latest    f738768d526a   27 hours ago    1.93GB
+    mysql                       8.0       a123df39bc7c   5 days ago      786MB
+    phpmyadmin/phpmyadmin       latest    e66b1f5a8c58   5 months ago    742MB
+
+Ejecutamos para validar que no se este ejecutando la imagen que vamos a eliminar
+
+    docker ps -a
+
+    docker stop NOMBRE_CONTENEDOR
+    docker rm NOMBRE_CONTENEDOR
+
+Borramos por IMAGE ID
+
+    docker rmi 4b26cc548579
+
+******************************************************
+Para depurar 
+******************************************************
+
+Lista los archivos del sistema dentro del contenedor:
+
+    docker exec -it php-apache bash
+    
+    401.php  404.php  503.php  Controller  Database  Helps       Model    Updates  assets         composer.lock  index.php                                                                                                 index_te.php  robots.txt  sb-contratos  sb-graficas       vendor
+    403.php  500.php  504.php  Dao         Files     Middleware  OldData  View     composer.json  config.php     index_actualizando.php  php.ini                                                                         sb-admin    sb-gastos     site.webmanifest
+    
+
+
+    docker compose -f docker-compose.prod.yml logs -f php-apache
+

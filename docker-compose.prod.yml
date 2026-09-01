@@ -1,0 +1,23 @@
+services:
+
+  sistemaapi:
+    image: estrada59/sistemaapi:1.0
+
+    container_name: sistemaapi
+
+    restart: unless-stopped
+
+    ports:
+      - "3002:80"
+
+    env_file:
+      - .env.production
+
+    networks:
+      - backend
+
+networks:
+
+  backend:
+    external: true
+    name: backend-network

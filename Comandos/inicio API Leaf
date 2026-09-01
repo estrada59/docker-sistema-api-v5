@@ -1,0 +1,4 @@
+Se inicializa proyecto leaf dentro del directorio /src
+no tiene que estar creada la carpeta y no tiene que estar arriba el contenedor
+
+    leaf create . --api --no-docker

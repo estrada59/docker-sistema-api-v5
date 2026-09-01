@@ -1,0 +1,54 @@
+****************************************
+Entrar con MariaDB
+****************************************
+
+    docker exec -it mysql-db mysql -u root -p
+
+****************************************
+Crear BD y asignar usuario para migrar BD antigua
+
+docker exec -it mysql-db bash
+
+mysql -u root -proot
+
+show databases;
+
+CREATE DATABASE mednuc_old;
+
+SELECT user, host FROM mysql.user;
+
+GRANT ALL PRIVILEGES ON mednuc_old.* TO 'dev'@'%';
+
+FLUSH PRIVILEGES;
+
+Windows
+Get-Content docker/initdb/dump2.sql -Raw | docker exec -i mysql-db mysql -u dev -pdev1234 mednuc_old  
+
+Linux
+docker cp docker/initdb/dump.sql mysql-db:/dump.sql
+
+****************************************
+Eliminar BD y volver a cargar todo el dump
+
+copiar el dump al contenedor mysql
+
+docker cp docker/initdb/dump.sql mysql-db:/dump.sql
+
+docker exec -it mysql-db bash
+
+mysql -u root -proot
+
+DROP DATABASE medicinanuclear;
+
+CREATE DATABASE medicinanuclear;
+
+exit
+
+mysql -u dev -pdev123
+
+USE medicinanuclear;
+
+SOURCE /dump.sql;
+
+
+

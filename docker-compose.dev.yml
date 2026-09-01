@@ -1,0 +1,28 @@
+services:
+
+  sistemaapi:
+    container_name: sistemaapi2
+
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    restart: unless-stopped
+
+    ports:
+      - "3003:80"
+
+    volumes:
+      - ./src:/var/www/html
+
+    env_file:
+      - .env.local
+
+    networks:
+      - backend
+
+networks:
+
+  backend:
+    external: true
+    name: backend-network

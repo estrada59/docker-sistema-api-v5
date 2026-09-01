@@ -1,0 +1,129 @@
+Levantar contenedores
+
+docker compose up -d //Funciona cuando hay docker-compose.yml
+
+docker compose -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.dev.yml up -d
+
+Levantar contenedor con env file personalizado
+docker compose --env-file .env.local -f docker-compose.dev.yml up -d 
+
+Apagar
+
+docker compose down
+
+docker compose -f docker-compose.dev.yml down
+
+Ver logs
+
+docker compose logs -f
+
+docker compose -f docker-compose.dev.yml logs -f
+
+Entrar al contenedor
+
+docker exec -it php-apache bash
+
+************************************************************************
+
+Regenerar contenedor cuando se modifican Dockerfile y docker-compose.yml
+
+🔄 Luego reconstruye el contenedor
+
+Muy importante usar --build para que se instale la extensión:
+
+docker compose down
+docker compose up -d --build
+
+docker compose -f docker-compose.dev.yml down 
+docker compose -f docker-compose.dev.yml up -d --build
+docker-compose -f docker-compose.dev.yml up -d --build web
+
+************************************************************************
+
+Cuándo sí conviene eliminarlo
+Solo cuando quieres reiniciar completamente la base de datos.
+
+En ese caso puedes hacer:
+
+docker compose down -v
+
+Eso elimina también el volumen:
+
+db_data
+
+y la base vuelve a empezar desde cero.
+
+********************************************
+Subir al vps una imagen
+
+Paso 1:
+Crear la imagen del proyecto, nos posicionamos dentro de la carpeta
+del proyecto y ejecutamos
+
+docker build -t estrada59/medicinanuclear:1.0 .
+
+Significado del comando:
+Construye una imagen a partir de un Dockerfile
+
+estrada59 / medicinanuclear :   1.0
+   |         |                   |
+usuario   nombre                versión
+
+***************************
+
+docker login
+
+Devuelde el nombre de usuario
+***************************
+
+Paso 2: en visual studio dentro del proyecto ejecutamos:
+
+docker push estrada59/medicinanuclear:1.0
+
+Paso 3: en el VPS de google en el SSH
+
+ejecutamos con sudo su
+
+docker pull estrada59/medicinanuclear:1.0
+
+comprobamos que la imgaen este con 
+
+docker images
+
+Paso 4: 
+Ejecutamos
+
+docker run -d -p 3000:80 --name medicinanuclear estrada59/medicinanuclear:1.0
+
+*entramos dentro del contenedor:
+docker exec -it medicinanuclear bash
+docker exec -it medicinanuclear ls /var/www/html
+
+
+
+
+Eliminar todos los contenedores:
+🧨 🥇 Eliminar TODOS los contenedores (rápido)
+
+docker rm -f $(docker ps -aq)
+
+🔍 ¿Qué hace?
+
+docker ps -aq → lista TODOS los contenedores
+
+docker rm -f → los elimina (aunque estén corriendo)
+
+🧹 🥈 Forma más “segura” (paso a paso)
+1. Parar todos
+docker stop $(docker ps -aq)
+2. Eliminar todos
+docker rm $(docker ps -aq)
+
+
+Eliminar todas la imagenes
+🧨 🥇 Eliminar TODAS las imágenes
+docker rmi -f $(docker images -aq)
+
+
+

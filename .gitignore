@@ -1,0 +1,61 @@
+# 🔐 Variables de entorno
+.env
+.env.*
+src/.env
+src/.env.*
+
+# 🔐 Configuración sensible
+src/config.php
+.htaccess
+php.ini
+
+# 📦 Dependencias
+vendor/
+
+# 🧾 Logs
+*.log
+
+# 💾 Backups (CRÍTICO en tu caso)
+*.sql
+*.gz
+*.zip
+*.tar
+*.backup
+
+# 🗂️ Carpetas (solo si son datos, NO código)
+src/app/controllers/TestController.php
+
+# 🧠 OS basura
+.DS_Store
+Thumbs.db
+
+# Packages
+src/composer.phar
+src/vendor
+src/node_modules
+
+# Build
+src/build
+src/dist
+src/compiled
+
+# System/Editor
+src/.fleet
+src/.idea
+src/.nova
+src/.vscode
+src/.zed
+
+# Leaf
+src/.hana
+src/.alchemy
+src/hot
+src/storage/framework
+src/storage/logs
+src/storage/database
+src/public/storage
+
+# Logs
+src/npm-debug.log
+src/yarn-error.log
+src/.phpunit.result.cache

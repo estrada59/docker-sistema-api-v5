@@ -1,0 +1,14 @@
+# Ignorar la carpeta de librerías (la generará el contenedor)
+src/vendor/
+src/Database/
+src/Updates/
+src/Files/
+
+# Ignorar archivos de control de versiones
+.git
+.gitignore
+
+# Ignorar archivos temporales o de configuración del editor
+.vscode/
+.DS_Store
+Thumbs.db
