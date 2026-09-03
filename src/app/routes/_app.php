@@ -16,8 +16,11 @@ app()->cors([
  * Prevenir solicitudes CSRF
  */
 app()->csrf();
+app()->csrf([
+  'cookie' => false,
+]);
 
-// Display the token in your views or to send the token to your frontend
+// // Display the token in your views or to send the token to your frontend
 app()->get('/csrf-token', function () {
     return response()->json(['csrf_token' => csrf()->token()]);
 });
@@ -108,3 +111,5 @@ app()->get('/', ['middleware' => 'statusLogin', function () {
 
 // app()->get('/generaToken', 'TestController@generateToken');
 // app()->get('/generatePassword/{password}', 'TestController@generatePassword');
+
+
