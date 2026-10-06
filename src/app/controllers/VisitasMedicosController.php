@@ -18,29 +18,8 @@ class VisitasMedicosController extends Controller
      */
     public function visitasMedicos()
     {
-        $user = auth()->user(); // Obtiene el usuario autenticado
-        if(!$user) {
-            return response()->exit([
-                'message' => 'Unauthorized Error 401',
-                'data' => auth()->errors(),
-            ], 401);
-        }
-
-        auth()->config('hidden', ['password', 'id', 'name', 'email','token']);
-
-        auth()->config('token.lifetime', '1 hour'); // 1 hour'
-
-        $tokenBd = auth()->user()->token;
-        
-        //Get Object User generated on user login 
-        //$data = auth()->data();
-        // print_r($data);
-        
-        $authHeader = request()->headers('Authorization');;
-
-        $tokenHeader = str_replace('Bearer ', '', $authHeader);
-        
-        if($tokenHeader === $tokenBd){
+        try
+        {
             //Consultas personalizadas
             $datosVisitasMedicos = db()
                                 ->query('SELECT  tbl_visitas_medicos.id_medico_venta as id_medico,
@@ -94,15 +73,30 @@ class VisitasMedicosController extends Controller
                                 ->bind('1')
                                 ->all();
 
-            response()->json($datosVisitasMedicos);    
-            // response()->json($allHeaders);
-        }else{
-            // data is invalid 
-            response()->json([
+            if (!empty($datosVisitasMedicos)) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Encontramos datos',
+                    'data' => $datosVisitasMedicos
+                ], 200);
+            }
+
+            return response()->json([
                 'status' => 'fail',
-                'message' => 'token inválido'
-            ]);
-        }   
+                'message' => 'No hay datos registrados en este periodo',
+                'data' => []
+            ], 404);
+            
+        } catch (\PDOException $exception) {
+                // Guardar error en un log
+                $this->logError($exception, "No se pudo obtener los datos de visitas médicas.");
+
+                return response()->json([
+                'status' => 'error',
+                'message' => 'Ocurrió un error interno al consultar los datos de visitas médicas.',
+                'data' => []
+            ], 500);
+        }     
            
     }
 
@@ -113,6 +107,25 @@ class VisitasMedicosController extends Controller
     public function visitasMedicosTest()
     {
         
+    }
+
+    /**
+     * Obtiene los errores en las consultas insert update delete y select
+     * y guarga un registro log en caso de que falle
+     * 
+     * Rev. 2026_10_05
+     */
+    private function logError(\PDOException $exception, string $message): void
+    {
+        $error = "Error en línea " . $exception->getLine() . 
+                 ": $message. Archivo " . $exception->getFile() . 
+                 " Mensaje: " . $exception->getMessage();
+
+        $archivo_registro = 'errorSql.log';
+        $marca_tiempo = date('Y-m-d H:i:s');
+        $mensaje_registro = "[$marca_tiempo] $error\n";
+
+        file_put_contents($archivo_registro, $mensaje_registro, FILE_APPEND);
     }
 
     

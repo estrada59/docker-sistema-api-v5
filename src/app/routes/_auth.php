@@ -32,5 +32,8 @@ app()->group('/admin', [
         app()->post('/cobrosPublicaMN/{fecha}', 'PagosController@getCobrosPublicaMN');
         app()->post('/cobrosParticularTomo/{fecha}', 'PagosController@getCobrosParticularTomo');
         app()->post('/cobrosPublicaTomo/{fecha}', 'PagosController@getCobrosPublicaTomo');
+        app()->post('/gastosMnAño/{fecha}', 'GastosController@getGastosMNporAño');
+        app()->post('/gastosTomografiaAño/{fecha}', 'GastosController@getGastosTomografiaporAño');
+
     },
 ]);

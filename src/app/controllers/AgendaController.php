@@ -19,44 +19,13 @@ class AgendaController extends Controller
      */
     public function agendaMedicinaNuclear($fecha_estudios)
     {
-        $user = auth()->user(); // Obtiene el usuario autenticado
+        $help = new HelpController();
+        $fecha_fin = $help->last_year_day($fecha_estudios);
+        $fecha_ini = $help->first_year_day($fecha_estudios); 
 
-        if($user)
-        {
-            auth()->config('hidden', ['password', 'id', 'name', 'email','token']);
+        $arrayDeptos =1; //Para medicina nuclear
 
-            auth()->config('token.lifetime', '1 hour'); // 1 hour'
-
-            $tokenBd = auth()->user()->token;
-            
-            $authHeader = request()->headers('Authorization');;
-
-            $tokenHeader = str_replace('Bearer ', '', $authHeader);
-            
-            if($tokenHeader === $tokenBd){
-            
-
-                $help = new HelpController();
-                $fecha_fin = $help->last_year_day($fecha_estudios);
-                $fecha_ini = $help->first_year_day($fecha_estudios); 
-
-                $arrayDeptos =1; //Para medicina nuclear
-
-                $this->getByMonth($fecha_ini, $fecha_fin, $arrayDeptos);
-        
-            }else{
-                // data is invalid 
-                response()->json([
-                    'status' => 'fail',
-                    'message' => 'token inválido'
-                ]);
-            }
-        } else{
-            return response()->json([
-                'status' => 'fail',
-                'message' => 'Debes iniciar sesión'
-            ]);
-        }   
+        $this->getByMonth($fecha_ini, $fecha_fin, $arrayDeptos);    
     }
 
     /**
@@ -64,187 +33,165 @@ class AgendaController extends Controller
      */
     public function agendaTomografia($fecha)
     {
-        $user = auth()->user(); // Obtiene el usuario autenticado
+        $help = new HelpController();
+        $fecha_fin = $help->last_year_day($fecha);
+        $fecha_ini = $help->first_year_day($fecha);
 
-        if($user)
-        {
-            auth()->config('hidden', ['password', 'id', 'name', 'email','token']);
+        $arrayDeptos =2; //Para tomografía
 
-            auth()->config('token.lifetime', '1 hour'); // 1 hour'
-
-            $tokenBd = auth()->user()->token;
-            
-            $authHeader = request()->headers('Authorization');;
-
-            $tokenHeader = str_replace('Bearer ', '', $authHeader);
-            
-            if($tokenHeader === $tokenBd){
-                $fecha_estudios = $fecha;
-
-                $help = new HelpController();
-                $fecha_fin = $help->last_year_day($fecha_estudios);
-                $fecha_ini = $help->first_year_day($fecha_estudios);
-
-                $arrayDeptos =2; //Para tomografía
-
-                $this->getByMonth($fecha_ini, $fecha_fin, $arrayDeptos);
-        
-            }else{
-                // data is invalid 
-                response()->json([
-                    'status' => 'fail',
-                    'message' => 'token inválido'
-                ]);
-            }
-        } else{
-            return response()->json([
-                'status' => 'fail',
-                'message' => 'Debes iniciar sesión'
-            ]);
-        }   
+        $this->getByMonth($fecha_ini, $fecha_fin, $arrayDeptos);   
+          
     }
 
     /**
      * Obtiene todos los pacientes agendados en el mes seleccionado
      * de acuerdo con el departamento (MEDICINA NUCLEAR)
      */
-    public function getByMonth($fecha_ini, $fecha_fin, $ids_departamentos) :void
+    public function getByMonth($fecha_ini, $fecha_fin, $ids_departamentos) 
     {
-        $fecha_ini = $fecha_ini.' 00:00:00';
-        $fecha_fin = $fecha_fin.' 23:59:59';
-        // response()->json($fecha_fin);
-        
-        $rows = db()
-                    ->query('SELECT count(tbl_agenda.id_agenda) as total, count(tbl_agenda.id_agenda) as total2 FROM tbl_agenda WHERE tbl_agenda.activo = ?')
-                    ->bind('1')->fetchObj();
-                    
-        // $total = (int) $rows[0]['total']; 
-
-        if ($rows->total> 0) {
+        try
+        {
+            $fecha_ini = $fecha_ini.' 00:00:00';
+            $fecha_fin = $fecha_fin.' 23:59:59';
+            // response()->json($fecha_fin);
             
-            $id_depto = $ids_departamentos;
+            $rows = db()
+                        ->query('SELECT count(tbl_agenda.id_agenda) as total, count(tbl_agenda.id_agenda) as total2 FROM tbl_agenda WHERE tbl_agenda.activo = ?')
+                        ->bind('1')->fetchObj();
+                        
+            // $total = (int) $rows[0]['total']; 
 
-            $datosPacientesAgendados = db()
-                            ->query("SELECT 
-                                            tbl_agenda.id_agenda,
-                                            
-                                            tbl_agenda.id_cliente,
-                                            
-                                            (DATE_FORMAT(tbl_agenda.fecha_cita, '%d-%m-%Y') ) AS fecha_cita,
-                                            
-                                            concat(tbl_clientes.nombre,' ',tbl_clientes.apellido_paterno,' ',tbl_clientes.apellido_materno) as nombre_completo,
-                                            
-                                            tbl_detalle_venta.descripcion as estudio,
-                                        
-                                            (DATE_FORMAT(tbl_agenda.fecha_cita, '%h:%i %p') ) AS hora,
-                                            
-                                            tblc_tipo_instituciones.descripcion as tipo_institucion,
-                                            
-                                            concat((SELECT tblc_grado_medico.descripcion 
-                                                                FROM tblc_grado_medico 
-                                                                WHERE tblc_grado_medico.id_grado_medico = tbl_medicos.id_grado_medico ),' ',tbl_medicos.nombre,' ',tbl_medicos.apellido_paterno,' ',tbl_medicos.apellido_materno) as medico,
+            if ($rows->total> 0) {
+                
+                $id_depto = $ids_departamentos;
+
+                $datosPacientesAgendados = db()
+                                ->query("SELECT 
+                                                tbl_agenda.id_agenda,
                                                 
-                                            (SELECT group_concat(tbl_telefono_clientes.telefono SEPARATOR ', ') as telefonos
-                                                            FROM tbl_telefono_clientes
-                                                            WHERE tbl_telefono_clientes.id_cliente = tbl_agenda.id_cliente) AS telefono_cliente,
-                                            
-                                        
-                                            tblc_estatus_agenda.id_estatus_agenda as id_estatus,
-                                            tblc_estatus_agenda.descripcion as estatus,
-                                            
-                                            
-                                            
-                                            (SELECT tblc_colores.descripcion
-                                                FROM tblc_colores
-                                                WHERE tblc_colores.id_color = (SELECT tblc_estatus_agenda.id_color
-                                                                                FROM tblc_estatus_agenda
-                                                                                WHERE tblc_estatus_agenda.id_estatus_agenda = tbl_agenda.id_estatus_agenda ) ) as color_descripcion,
-                                            
-                                            tbl_clientes.nombre,
-                                            tbl_clientes.apellido_paterno,
-                                            tbl_clientes.apellido_materno,
-                                            tbl_clientes.peso,
-                                            tbl_clientes.fecha_nacimiento,
-                                            tbl_clientes.email,
-                                            tbl_clientes.id_sexo,
-                                            
-                                            (SELECT tblc_sexos.descripcion
-                                                FROM tblc_sexos
-                                                WHERE tblc_sexos.id_sexo = tbl_clientes.id_sexo) as sexo_descripcion,
-                                            
-                                            tbl_clientes.id_edad,
-                                            tbl_clientes.edad,
-                                            (SELECT tblc_edad.descripcion
-                                                FROM tblc_edad
-                                                WHERE tblc_edad.id_edad = tbl_clientes.id_edad) as edad_descripcion,
+                                                tbl_agenda.id_cliente,
                                                 
-                                            (SELECT concat(tbl_empleados.nombre,' ',tbl_empleados.apellido_paterno,' ', tbl_empleados.apellido_materno) as atendio
-                                                FROM tbl_empleados
-                                                WHERE tbl_empleados.id_empleado = (SELECT tbl_usuarios.id_empleado FROM tbl_usuarios WHERE tbl_usuarios.id_usuario = tbl_agenda.id_usuario) ) as agendo,
+                                                (DATE_FORMAT(tbl_agenda.fecha_cita, '%d-%m-%Y') ) AS fecha_cita,
+                                                
+                                                concat(tbl_clientes.nombre,' ',tbl_clientes.apellido_paterno,' ',tbl_clientes.apellido_materno) as nombre_completo,
+                                                
+                                                tbl_detalle_venta.descripcion as estudio,
                                             
-                                            tbl_agenda.notas,
-                                            tbl_agenda.id_lista_precio, 
-                                            tbl_lista_precios.id_institucion,
+                                                (DATE_FORMAT(tbl_agenda.fecha_cita, '%h:%i %p') ) AS hora,
+                                                
+                                                tblc_tipo_instituciones.descripcion as tipo_institucion,
+                                                
+                                                concat((SELECT tblc_grado_medico.descripcion 
+                                                                    FROM tblc_grado_medico 
+                                                                    WHERE tblc_grado_medico.id_grado_medico = tbl_medicos.id_grado_medico ),' ',tbl_medicos.nombre,' ',tbl_medicos.apellido_paterno,' ',tbl_medicos.apellido_materno) as medico,
+                                                    
+                                                (SELECT group_concat(tbl_telefono_clientes.telefono SEPARATOR ', ') as telefonos
+                                                                FROM tbl_telefono_clientes
+                                                                WHERE tbl_telefono_clientes.id_cliente = tbl_agenda.id_cliente) AS telefono_cliente,
+                                                
                                             
+                                                tblc_estatus_agenda.id_estatus_agenda as id_estatus,
+                                                tblc_estatus_agenda.descripcion as estatus,
+                                                
+                                                
+                                                
+                                                (SELECT tblc_colores.descripcion
+                                                    FROM tblc_colores
+                                                    WHERE tblc_colores.id_color = (SELECT tblc_estatus_agenda.id_color
+                                                                                    FROM tblc_estatus_agenda
+                                                                                    WHERE tblc_estatus_agenda.id_estatus_agenda = tbl_agenda.id_estatus_agenda ) ) as color_descripcion,
+                                                
+                                                tbl_clientes.nombre,
+                                                tbl_clientes.apellido_paterno,
+                                                tbl_clientes.apellido_materno,
+                                                tbl_clientes.peso,
+                                                tbl_clientes.fecha_nacimiento,
+                                                tbl_clientes.email,
+                                                tbl_clientes.id_sexo,
+                                                
+                                                (SELECT tblc_sexos.descripcion
+                                                    FROM tblc_sexos
+                                                    WHERE tblc_sexos.id_sexo = tbl_clientes.id_sexo) as sexo_descripcion,
+                                                
+                                                tbl_clientes.id_edad,
+                                                tbl_clientes.edad,
+                                                (SELECT tblc_edad.descripcion
+                                                    FROM tblc_edad
+                                                    WHERE tblc_edad.id_edad = tbl_clientes.id_edad) as edad_descripcion,
+                                                    
+                                                (SELECT concat(tbl_empleados.nombre,' ',tbl_empleados.apellido_paterno,' ', tbl_empleados.apellido_materno) as atendio
+                                                    FROM tbl_empleados
+                                                    WHERE tbl_empleados.id_empleado = (SELECT tbl_usuarios.id_empleado FROM tbl_usuarios WHERE tbl_usuarios.id_usuario = tbl_agenda.id_usuario) ) as agendo,
+                                                
+                                                tbl_agenda.notas,
+                                                tbl_agenda.id_lista_precio, 
+                                                tbl_lista_precios.id_institucion,
+                                                
+                                                
+                                                (SELECT tblc_instituciones.descripcion 
+                                                    FROM tblc_instituciones 
+                                                    WHERE tblc_instituciones.id_institucion = tbl_lista_precios.id_institucion) as institucion_descripcion,
+
+                                                (SELECT tbl_ventas.monto_restante_pagar FROM tbl_ventas WHERE tbl_ventas.id_ventas = tbl_agenda.id_ventas) as debe,
+
+                                                (select d.id_departamento
+                                                    from tblc_departamentos d 
+                                                    where d.id_departamento = (select lp.id_departamento 
+                                                                                from tbl_lista_precios lp 
+                                                                                where lp.id_lista_precio = tbl_agenda.id_lista_precio ) ) as id_departamento,
+
+                                                (select d.descripcion
+                                                    from tblc_departamentos d 
+                                                    where d.id_departamento = (select lp.id_departamento 
+                                                                                from tbl_lista_precios lp 
+                                                                                where lp.id_lista_precio = tbl_agenda.id_lista_precio ) ) as departamento,
+                                                tbl_agenda.dosis_tratamiento
+                                                
+                                                
+                                            FROM tbl_agenda
+                                        INNER JOIN tbl_clientes ON tbl_agenda.id_cliente = tbl_clientes.id_cliente
+                                        INNER JOIN tbl_lista_precios on tbl_agenda.id_lista_precio = tbl_lista_precios.id_lista_precio
+                                        INNER JOIN tbl_detalle_venta on tbl_agenda.id_ventas = tbl_detalle_venta.id_ventas
+                                        INNER JOIN tblc_tipo_instituciones on tbl_agenda.id_tipo_institucion = tblc_tipo_instituciones.id_tipo_institucion
+                                        INNER JOIN tbl_medicos on tbl_agenda.id_medico = tbl_medicos.id_medico
+                                        INNER JOIN tblc_estatus_agenda on tbl_agenda.id_estatus_agenda = tblc_estatus_agenda.id_estatus_agenda
                                             
-                                            (SELECT tblc_instituciones.descripcion 
-                                                FROM tblc_instituciones 
-                                                WHERE tblc_instituciones.id_institucion = tbl_lista_precios.id_institucion) as institucion_descripcion,
+                                        WHERE (tbl_agenda.fecha_cita between ? and ?) and id_departamento = ? AND tbl_agenda.activo = 1 ORDER BY tbl_agenda.fecha_cita;")
+                                ->bind($fecha_ini, $fecha_fin, $id_depto)
+                                ->all();
+                
+                if (!empty($datosPacientesAgendados)) {
+                    return response()->json([
+                        'status' => 'success',
+                        'message' => 'Encontramos datos',
+                        'data' => $datosPacientesAgendados
+                    ], 200);
+                }
 
-                                            (SELECT tbl_ventas.monto_restante_pagar FROM tbl_ventas WHERE tbl_ventas.id_ventas = tbl_agenda.id_ventas) as debe,
-
-                                            (select d.id_departamento
-                                                from tblc_departamentos d 
-                                                where d.id_departamento = (select lp.id_departamento 
-                                                                            from tbl_lista_precios lp 
-                                                                            where lp.id_lista_precio = tbl_agenda.id_lista_precio ) ) as id_departamento,
-
-                                            (select d.descripcion
-                                                from tblc_departamentos d 
-                                                where d.id_departamento = (select lp.id_departamento 
-                                                                            from tbl_lista_precios lp 
-                                                                            where lp.id_lista_precio = tbl_agenda.id_lista_precio ) ) as departamento,
-                                            tbl_agenda.dosis_tratamiento
-                                            
-                                            
-                                        FROM tbl_agenda
-                                    INNER JOIN tbl_clientes ON tbl_agenda.id_cliente = tbl_clientes.id_cliente
-                                    INNER JOIN tbl_lista_precios on tbl_agenda.id_lista_precio = tbl_lista_precios.id_lista_precio
-                                    INNER JOIN tbl_detalle_venta on tbl_agenda.id_ventas = tbl_detalle_venta.id_ventas
-                                    INNER JOIN tblc_tipo_instituciones on tbl_agenda.id_tipo_institucion = tblc_tipo_instituciones.id_tipo_institucion
-                                    INNER JOIN tbl_medicos on tbl_agenda.id_medico = tbl_medicos.id_medico
-                                    INNER JOIN tblc_estatus_agenda on tbl_agenda.id_estatus_agenda = tblc_estatus_agenda.id_estatus_agenda
-                                        
-                                    WHERE (tbl_agenda.fecha_cita between ? and ?) and id_departamento = ? AND tbl_agenda.activo = 1 ORDER BY tbl_agenda.fecha_cita;")
-                            ->bind($fecha_ini, $fecha_fin, $id_depto)
-                            ->all();
-            
-
-            if( $datosPacientesAgendados != null ){
-
-                response()->json([
-                    'status' => 'Success',
-                    'msj' => 'Encontramos datos',
-                    'clientes' => $datosPacientesAgendados
-                ]);
-
-            }else{
-
-                response()->json([
+                return response()->json([
                     'status' => 'fail',
-                    'msj' => 'No hay datos...',
-                    'clientes' => ''
-                ]);
+                    'message' => 'No hay datos registrados en este periodo',
+                    'data' => []
+                ], 404);
 
             }
-        }
-        else{
-            // data is invalid 
-            response()->json([
-                'status' => 'fail',
-                'msj' => 'No hay datos...',
-                'clientes' => ''
-            ]);
+            else{
+                // data is invalid 
+                return response()->json([
+                    'status' => 'fail',
+                    'message' => 'No hay datos registrados en este periodo',
+                    'data' => []
+                ], 404);
+            }
+        } catch (\PDOException $exception) {
+            // Guardar error en un log
+            $this->logError($exception, "No se pudo obtener la agenda.");
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Ocurrió un error interno al consultar la agenda.',
+                'data' => []
+            ], 500);
         }
    
     }
@@ -254,7 +201,8 @@ class AgendaController extends Controller
      */
     public function totalPacientesAtendidos()
     {
-        
+        try
+        {
         
             $rows = db()
                         ->query('SELECT count(tbl_agenda.id_agenda) as total  FROM tbl_agenda WHERE tbl_agenda.id_estatus_agenda = ?')
@@ -266,25 +214,49 @@ class AgendaController extends Controller
             $pacSistemaViejoTransision = 560; // contabilizando pacientes enero-junio 2024  #SELECT count(idpacientes) as total from pacientes where pacientes.fecha BETWEEN '2024-01-01' and '2024-06-31' and estatus = 2;#
             $total = $pacSistemaViejo + $totalAgenda +$pacSistemaViejoTransision;
             
-
-            if ($totalAgenda> 0) {
-                response()->json([
-                    'status' => 'Success',
-                    'msj' => 'Encontramos datos',
+            if (!empty($totalAgenda)) {
+                return response()->json([
+                    'status' => 'success',
+                    'message' => 'Encontramos datos',
                     'total' => $total
-                ]);
+                ], 200);
             }
-            else{
-                // data is invalid 
-                response()->json([
-                    'status' => 'fail',
-                    'msj' => 'No hay datos...',
-                    'total' => '0'
-                ]);
-            }
-    
-       
-         
+
+            return response()->json([
+                'status' => 'fail',
+                'message' => 'No hay datos registrados en este periodo',
+                'total' => '0'
+            ], 404);
+           
+        } catch (\PDOException $exception) {
+            // Guardar error en un log
+            $this->logError($exception, "No se pudo obtener el total de pacientes atendidos.");
+
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Ocurrió un error interno al consultar el total de pacientes atendidos.',
+                'total' => 0
+            ], 500);
+        }
+    }
+
+    /**
+     * Obtiene los errores en las consultas insert update delete y select
+     * y guarga un registro log en caso de que falle
+     * 
+     * Rev. 2026_10_05
+     */
+    private function logError(\PDOException $exception, string $message): void
+    {
+        $error = "Error en línea " . $exception->getLine() . 
+                 ": $message. Archivo " . $exception->getFile() . 
+                 " Mensaje: " . $exception->getMessage();
+
+        $archivo_registro = 'errorSql.log';
+        $marca_tiempo = date('Y-m-d H:i:s');
+        $mensaje_registro = "[$marca_tiempo] $error\n";
+
+        file_put_contents($archivo_registro, $mensaje_registro, FILE_APPEND);
     }
     
 }
